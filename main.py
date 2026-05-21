@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException 
+from fastapi import FastAPI, HTTPException, Depends, Query
 from pydantic import BaseModel 
 from database import engine
 from models import TaskModel 
@@ -56,11 +56,25 @@ def create_task(
 
     return new_task
 
-@app.get("/tasks")
-def get_tasks(db: Session = Depends(get_db)):
+@app.get("/tasks", response_model=list[schemas.TaskResponse])
+def get_tasks(
+    completed: bool | None = None,
+    search: str | None = None,
+    skip: int = Query(default=0, ge=0), #cuantos registros saltar
+    limit: int = Query(default=10, ge=1, le=100), #cuantos registros devolver 
+    db: Session = Depends(get_db)
+    ):
 
-    tasks = db.query(TaskModel).all() #Haz una consulta sobre la tabla tasks, y trae todos los registros
-                                      #SELECT * FROM tasks
+    query = db.query(TaskModel) #SELECT * FROM tasks
+
+    if completed is not None:
+        query = query.filter(TaskModel.completed == completed) #SELECT * FROM tasks WHERE completed = true
+    
+    if search is not None:
+        query = query.filter(TaskModel.title.contains(search))
+    
+    tasks = query.order_by(TaskModel.id.desc()).offset(skip).limit(limit).all() #SELECT * FROM tasks WHERE completed = true ORDER BY id DESC LIMIT 10 OFFSET 0
+    
     return tasks 
 
 @app.get("/tasks/completed")
@@ -112,6 +126,34 @@ def update_task(
 
     return task 
 
+@app.patch("/tasks/{task_id}", response_model=schemas.TaskResponse)
+def patch_task(
+    task_id: int,
+    task_update: schemas.TaskUpdate,
+    db: Session = Depends(get_db)
+):
+
+    task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    if task_update.title is not None:
+        task.title = task_update.title
+
+    if task_update.description is not None:
+        task.description = task_update.description
+
+    if task_update.completed is not None:
+        task.completed = task_update.completed
+
+    db.commit()
+    db.refresh(task)
+
+    return task
     
 @app.delete("/tasks/{task_id}")
 def delete_task(
