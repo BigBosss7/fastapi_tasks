@@ -6,6 +6,13 @@ class TaskCreate(BaseModel):
     description: str
 
 
+
+class TaskUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    completed: bool | None= None
+    
+    
 class TaskResponse(BaseModel):
     id: int
     title: str
@@ -14,8 +21,3 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-class TaskUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    completed: bool | None= None
