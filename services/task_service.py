@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models.task_model import TaskModel 
-from schemas.task_schema import TaskCreate
+from schemas.task_schema import TaskCreate, TaskUpdate
 from fastapi import HTTPException
 
 def get_all_tasks(db: Session):
@@ -30,3 +30,53 @@ def get_task_by_id(task_id: int, db: Session):
         )
 
     return task
+
+def update_task_service(
+    task_id: int,
+    updated_task: TaskCreate,
+    db: Session
+):
+
+    task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail= "Tarea no encontrada"
+        )
+
+    task.title = updated_task.title
+    task.description = updated_task.description
+
+    db.commit()
+    db.refresh(task)
+
+    return task 
+
+def patch_task_service(
+    task_id: int,
+    task_update: TaskUpdate,
+    db: Session
+):
+
+    task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+
+    if not task:
+        raise HTTPException(
+            satus_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    if task_update.title is not None:
+        task.title = task_update.title
+
+    if task_update.description is not None:
+        task.description = task_update.description
+
+    if task_update.completed is not None:
+        task.complpeted = task_update.completed
+
+    db.commit()
+    db.refresh(task)
+
+    return task 

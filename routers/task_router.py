@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from schemas.task_schema import TaskResponse, TaskCreate
+from schemas.task_schema import TaskResponse, TaskCreate, TaskUpdate
 from services.task_service import (
     get_all_tasks, 
     create_task_service,
-    get_task_by_id
+    get_task_by_id,
+    update_task_service,
+    patch_task_service
 )
 
 
@@ -37,3 +39,20 @@ def create_task(
     db: Session = Depends(get_db)
 ):
     return create_task_service(task, db)
+
+@router.put("/tasks/{task_id}", response_model=TaskResponse)
+def update_task(
+    task_id: int,
+    updated_task: TaskCreate,
+    db: Session = Depends(get_db)
+):
+    return update_task_service(task_id, updated_task, db)
+    
+@router.patch("/tasks/{task_id}", response_model=TaskResponse)
+def patch_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    db: Session = Depends(get_db)
+    ):
+
+    return patch_task_service(task_id, task_update, db)
