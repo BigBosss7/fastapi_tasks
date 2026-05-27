@@ -3,9 +3,34 @@ from models.task_model import TaskModel
 from schemas.task_schema import TaskCreate, TaskUpdate
 from fastapi import HTTPException
 
-def get_all_tasks(db: Session):
-    return db.query(TaskModel).all()
+def get_all_tasks(
+    db: Session,
+    completed: bool | None = None,
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 10 
+):
+    query = db.query(TaskModel)
 
+    if completed is not None:
+        query = query.filter(
+            TaskModel.completed == completed
+        )
+
+    if search is not None:
+        query = query.filter(
+            TaskModel.title.contains(search)
+        )
+
+    tasks = (
+        query.
+        order_by(TaskModel.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return tasks
 
 def create_task_service(task: TaskCreate, db: Session):
     new_task = TaskModel(
@@ -80,3 +105,18 @@ def patch_task_service(
     db.refresh(task)
 
     return task 
+
+def delete_task_service(task_id: int, db: Session):
+
+    task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    db.delete(task)
+    db.commit()
+
+    return {"message": "Tarea eliminada correctamente"}

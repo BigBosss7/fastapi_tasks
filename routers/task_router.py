@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query 
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -8,7 +8,8 @@ from services.task_service import (
     create_task_service,
     get_task_by_id,
     update_task_service,
-    patch_task_service
+    patch_task_service,
+    delete_task_service
 )
 
 
@@ -23,8 +24,20 @@ def get_db():
 
 
 @router.get("/tasks", response_model=list[TaskResponse])
-def get_tasks(db: Session = Depends(get_db)):
-    return get_all_tasks(db)
+def get_tasks(
+    completed: bool | None = None,
+    search: str | None = None,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends (get_db)
+):
+    return get_all_tasks(
+        db=db,
+        completed=completed,
+        search=search,
+        skip=skip,
+        limit=limit
+    )
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
 def get_task(
@@ -56,3 +69,10 @@ def patch_task(
     ):
 
     return patch_task_service(task_id, task_update, db)
+
+@router.delete("/tasks/{task_id}")
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db)
+):
+    return delete_task_service(task_id, db)
