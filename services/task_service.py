@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models.task_model import TaskModel 
 from schemas.task_schema import TaskCreate, TaskUpdate
 from fastapi import HTTPException
+from exceptions.task_exceptions import TaskNotFoundException
 
 def get_all_tasks(
     db: Session,
@@ -49,10 +50,7 @@ def get_task_by_id(task_id: int, db: Session):
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
 
     if not task:
-        raise HTTPException(
-            status_code=404,
-            detail= "Tarea no encontrada"
-        )
+        raise TaskNotFoundException()
 
     return task
 
@@ -65,10 +63,7 @@ def update_task_service(
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
 
     if not task:
-        raise HTTPException(
-            status_code=404,
-            detail= "Tarea no encontrada"
-        )
+        raise TaskNotFoundException()
 
     task.title = updated_task.title
     task.description = updated_task.description
@@ -87,10 +82,7 @@ def patch_task_service(
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
 
     if not task:
-        raise HTTPException(
-            satus_code=404,
-            detail="Tarea no encontrada"
-        )
+        raise TaskNotFoundException()
 
     if task_update.title is not None:
         task.title = task_update.title
@@ -111,10 +103,7 @@ def delete_task_service(task_id: int, db: Session):
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
 
     if not task:
-        raise HTTPException(
-            status_code=404,
-            detail="Tarea no encontrada"
-        )
+        raise TaskNotFoundException()
 
     db.delete(task)
     db.commit()
