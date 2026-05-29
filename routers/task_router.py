@@ -11,6 +11,7 @@ from services.task_service import (
     patch_task_service,
     delete_task_service
 )
+from core.dependencias import get_current_user
 
 
 router = APIRouter()
@@ -29,7 +30,8 @@ def get_tasks(
     search: str | None = None,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=100),
-    db: Session = Depends (get_db)
+    db: Session = Depends (get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     return get_all_tasks(
         db=db,

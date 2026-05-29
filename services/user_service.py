@@ -4,6 +4,7 @@ from models.user_model import UserModel
 from schemas.user_schema import UserCreate
 from core.security import hash_password
 from core.security import verify_password
+from core.jwt import create_access_token
 from fastapi import HTTPException 
 
 def create_user_service(user: UserCreate, db: Session):
@@ -47,6 +48,14 @@ def login_user_service(
         detail="Credenciales inválidas"
     )
 
-  return {
-        "message": "Login correcto"
+  token = create_access_token(
+    {
+        "user_id": user.id,
+        "email": user.email
     }
+   )
+
+  return {
+    "access_token": token,
+    "token_type": "bearer"
+  }
